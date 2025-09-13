@@ -1,7 +1,19 @@
 // src/app/api/listings/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import type { Listing } from '@/types';
+type Listing = {
+  id: string;
+  title: string;
+  address: string;
+  area_m2: number;
+  area_py: number;
+  deposit: number;
+  rent: number;
+  contact_phone: string;
+  image_url?: string | null;
+  created_at: string;
+};
+type PartialListing = Partial<Listing>;
 
 // (선택) 단건 조회
 export async function GET(
@@ -31,7 +43,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await context.params;
-    const body = (await req.json()) as Partial<Listing>;
+    const body = (await req.json()) as PartialListing;
 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from('listings').update(body).eq('id', id);
