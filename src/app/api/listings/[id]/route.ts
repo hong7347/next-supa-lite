@@ -6,46 +6,57 @@ import type { Listing } from '@/types';
 // (선택) 단건 조회
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from('listings')
-    .select('*')
-    .eq('id', params.id)
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
-}
-
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }   // 👈 Promise 로 받기
 ) {
   try {
-    const body = (await req.json()) as Partial<Listing>;
+    const { id } = await context.params;         // 👈 await 해서 값 꺼내기
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from('listings').update(body).eq('id', params.id);
-    if (error) throw new Error(error.message);
-    return NextResponse.json({ ok: true });
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
+// 수정
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
+    const body = (await req.json()) as Partial<Listing>;
+
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from('listings').delete().eq('id', params.id);
+    const { error } = await supabase.from('listings').update(body).eq('id', id);
+
     if (error) throw new Error(error.message);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+// 삭제
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const supabase = getSupabaseAdmin();
+
+    const { error } = await supabase.from('listings').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
